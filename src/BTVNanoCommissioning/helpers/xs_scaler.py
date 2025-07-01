@@ -2,12 +2,12 @@ import copy
 import hist
 from coffea.processor import accumulate
 import os
-from BTVNanoCommissioning.helpers.xsection import xsection
+# from BTVNanoCommissioning.helpers.xsection import xsection
 
 """
 Scale histograms to corresponding cross-section. Merge mutiple `.coffea` and collate the MC samples into sub-class in this function.
 """
-# from BTVNanoCommissioning.helpers.xsection_13TeV import xsection_13TeV
+from BTVNanoCommissioning.helpers.xsection_13TeV import xsection_13TeV as xsection
 import numpy as np
 
 
@@ -45,7 +45,7 @@ def scaleSumW(output, lumi):
                 if sample in xs_dict.keys():
                     h = h * xs_dict[sample] * lumi / merged_output[sample]["sumw"]
                 else:
-                    if ("data" in sample) or ("Run" in sample) or ("Double" in sample):
+                    if ("data" in sample) or ("Run20" in sample) or ("Double" in sample): #NOTE modifiet Run to Run20
                         h = h
                     else:
                         raise KeyError(
@@ -54,6 +54,7 @@ def scaleSumW(output, lumi):
                         )
 
                 scaled[sample][key] = h
+
     return scaled
 
 

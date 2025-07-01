@@ -55,7 +55,6 @@ class NanoProcessor(processor.ProcessorABC):
     def process(self, events):
         events = missing_branch(events)
         shifts = common_shifts(self, events)
-
         return processor.accumulate(
             self.process_shift(update(events, collections), name)
             for collections, name in shifts
@@ -93,6 +92,7 @@ class NanoProcessor(processor.ProcessorABC):
         req_lumi = np.ones(len(events), dtype="bool")
         if isRealData:
             req_lumi = self.lumiMask(events.run, events.luminosityBlock)
+        print("The count of nonzero req_lumi is ",np.count_nonzero(req_lumi))
         # only dump for nominal case
         if shift_name is None:
             output = dump_lumi(events[req_lumi], output)
@@ -266,11 +266,13 @@ class NanoProcessor(processor.ProcessorABC):
                 pruned_ev[f"{ind_wei}_weight"] = weights.partial_weight(
                     include=[ind_wei]
                 )
+
         # Configure histograms
         if not self.noHist:
             output = histo_writter(
                 pruned_ev, output, weights, systematics, self.isSyst, self.SF_map
             )
+
         # Output arrays
         if self.isArray:
             array_writer(self, pruned_ev, events, systematics[0], dataset, isRealData)

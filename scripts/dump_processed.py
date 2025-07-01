@@ -23,6 +23,7 @@ def dump_lumi(output, fname):
 
     with open(f"{fname}_lumi.json", "w") as outfile:
         json.dump(dicts, outfile, indent=2)
+        print(f"Dumped {outfile}.json")
 
     lumi_in_pb = os.popen(
         f"export PATH=$HOME/.local/bin:/cvmfs/cms-bril.cern.ch/brilconda3/bin:$PATH; brilcalc lumi -c web -i {fname}_lumi.json -u /pb "
@@ -30,6 +31,7 @@ def dump_lumi(output, fname):
     lumi_in_pb = lumi_in_pb[
         lumi_in_pb.find("#Summary:") : lumi_in_pb.find("#Check JSON:")
     ]
+    breakpoint()
     lumi_in_pb = float(lumi_in_pb.split("\n")[-3].split("|")[-2])
 
     print(f"Luminosity in pb: {lumi_in_pb}")

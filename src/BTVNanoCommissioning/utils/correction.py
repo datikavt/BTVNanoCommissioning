@@ -67,6 +67,7 @@ def load_SF(year, campaign, syst=False):
                 correct_map["PU"] = correctionlib.CorrectionSet.from_file(
                     f"/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/LUM/{year}_{campaign}/puWeights.json.gz"
                 )
+                print("Using pileup weights from jsonpog-integration")
             ## Otherwise custom files
             else:
                 _pu_path = f"BTVNanoCommissioning.data.PU.{campaign}"
@@ -88,64 +89,69 @@ def load_SF(year, campaign, syst=False):
                         ext.finalize()
                         correct_map["PU"] = ext.make_evaluator()
 
-        ## btag weight
-        elif SF == "BTV":
-            if "btag" in config[campaign]["BTV"].keys() and config[campaign]["BTV"][
-                "btag"
-            ].endswith(".json.gz"):
-                correct_map["btag"] = correctionlib.CorrectionSet.from_file(
-                    importlib.resources.path(
-                        f"BTVNanoCommissioning.data.BTV.{year}_{campaign}", filename
-                    )
-                )
-            if "ctag" in config[campaign]["BTV"].keys() and config[campaign]["BTV"][
-                "ctag"
-            ].endswith(".json.gz"):
-                correct_map["btag"] = correctionlib.CorrectionSet.from_file(
-                    importlib.resources.path(
-                        f"BTVNanoCommissioning.data.BTV.{year}_{campaign}", filename
-                    )
-                )
-            if os.path.exists(
-                f"/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/BTV/{year}_{campaign}"
-            ):
-                correct_map["btag"] = correctionlib.CorrectionSet.from_file(
-                    f"/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/BTV/{year}_{campaign}/btagging.json.gz"
-                )
-                correct_map["ctag"] = correctionlib.CorrectionSet.from_file(
-                    f"/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/BTV/{year}_{campaign}/ctagging.json.gz"
-                )
-            else:
-                correct_map["btag"] = {}
-                correct_map["ctag"] = {}
-                correct_map["btv_cfg"] = config[campaign]["BTV"]
-                _btag_path = f"BTVNanoCommissioning.data.BTV.{year}_{campaign}"
-                for tagger in config[campaign]["BTV"]:
-                    with importlib.resources.path(
-                        _btag_path, config[campaign]["BTV"][tagger]
-                    ) as filename:
-                        if "B" in tagger:
-                            if filename.endswith(".json.gz"):
-                                correct_map["btag"] = (
-                                    correctionlib.CorrectionSet.from_file(filename)
-                                )
-                            else:
-                                correct_map["btag"][tagger] = BTagScaleFactor(
-                                    filename,
-                                    BTagScaleFactor.RESHAPE,
-                                    methods="iterativefit,iterativefit,iterativefit",
-                                )
-                        else:
-                            if filename.endswith(".json.gz"):
-                                correct_map["ctag"] = (
-                                    correctionlib.CorrectionSet.from_file(filename)
-                                )
-                            else:
-                                correct_map["ctag"][tagger] = BTagScaleFactor(
-                                    filename,
-                                    BTagScaleFactor.RESHAPE,
-                                    methods="iterativefit,iterativefit,iterativefit",
-                                )
+        # NOTE removed the btag weight option
+        # ## btag weight
+        # elif SF == "BTV":
+        #     if "btag" in config[campaign]["BTV"].keys() and config[campaign]["BTV"][
+        #         "btag"
+        #     ].endswith(".json.gz"):
+        #         correct_map["btag"] = correctionlib.CorrectionSet.from_file(
+        #             importlib.resources.path(
+        #                 f"BTVNanoCommissioning.data.BTV.{year}_{campaign}", filename
+        #             )
+        #         )
+        #     if "ctag" in config[campaign]["BTV"].keys() and config[campaign]["BTV"][
+        #         "ctag"
+        #     ].endswith(".json.gz"):
+        #         correct_map["btag"] = correctionlib.CorrectionSet.from_file(
+        #             importlib.resources.path(
+        #                 f"BTVNanoCommissioning.data.BTV.{year}_{campaign}", filename
+        #             )
+        #         )
+        #     if os.path.exists(
+        #         f"/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/BTV/{year}_{campaign}"
+        #     ):
+        #         correct_map["btag"] = correctionlib.CorrectionSet.from_file(
+        #             f"/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/BTV/{year}_{campaign}/btagging.json.gz"
+        #         )
+        #         correct_map["ctag"] = correctionlib.CorrectionSet.from_file(
+        #             f"/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/BTV/{year}_{campaign}/ctagging.json.gz"
+        #         )
+        #     else:
+        #         correct_map["btag"] = {}
+        #         correct_map["ctag"] = {}
+        #         correct_map["btv_cfg"] = config[campaign]["BTV"]
+        #         _btag_path = f"BTVNanoCommissioning.data.BTV.{year}_{campaign}"
+        #         if campaign == "Rereco17_94X":
+        #             _btag_path = f"BTVNanoCommissioning.data.BTV.{campaign}"
+        #         for tagger in config[campaign]["BTV"]:
+        #             with importlib.resources.path(
+        #                 _btag_path, config[campaign]["BTV"][tagger]
+        #             ) as filename:
+        #                 #NOTE filename is PosixPath for Rereco17_94X, using .suffix to get the extension
+        #                 filename = str(filename)  # Convert Path to string
+        #                 if "B" in tagger:
+        #                     if filename.endswith(".json.gz"):
+        #                         correct_map["btag"] = (
+        #                             correctionlib.CorrectionSet.from_file(filename)
+        #                         )
+        #                     else:
+        #                         correct_map["btag"][tagger] = BTagScaleFactor(
+        #                             filename,
+        #                             BTagScaleFactor.RESHAPE,
+        #                             methods="iterativefit,iterativefit,iterativefit",
+        #                         )
+        #                 else:
+        #                     if filename.endswith(".json.gz"):
+        #                         correct_map["ctag"] = (
+        #                             correctionlib.CorrectionSet.from_file(filename)
+        #                         )
+        #                     else:
+        #                         correct_map["ctag"][tagger] = BTagScaleFactor(
+        #                             filename,
+        #                             BTagScaleFactor.RESHAPE,
+        #                             methods="iterativefit,iterativefit,iterativefit",
+        #                         )
 
         ## lepton SFs
         elif SF == "LSF":
@@ -290,7 +296,8 @@ def load_SF(year, campaign, syst=False):
 
         ## JME corrections
         elif SF == "JME":
-            if "name" in config[campaign]["JME"].keys():
+            #NOTE  generalizing the if statement with an or because the config[campaign]["JME"] is not a dict for Rereco17_94X
+            if isinstance(config[campaign]["JME"], dict) and "name" in config[campaign]["JME"]:
 
                 if not os.path.exists(
                     f"src/BTVNanoCommissioning/data/JME/{year}_{campaign}/jec_compiled_{config[campaign]['JME']['name']}.pkl.gz"
@@ -992,6 +999,7 @@ def puwei(nPU, correct_map, weights, syst=False):
                 correct_map["PU"]["PUdown"](nPU),
             )
         else:
+            # NOTE removed Pileup
             weights.add("puweight", correct_map["PU"]["PU"](nPU))
 
 

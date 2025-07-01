@@ -85,7 +85,7 @@ class NanoProcessor(processor.ProcessorABC):
             output = dump_lumi(events[req_lumi], output)
 
         ## HLT
-        triggers = ["IsoMu24"]
+        triggers = ["IsoMu24"] #NOTE the BTV 20-001 uses IsoMu27
         req_trig = HLT_helper(events, triggers)
 
         ## Muon cuts

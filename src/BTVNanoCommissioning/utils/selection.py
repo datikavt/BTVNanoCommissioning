@@ -49,9 +49,9 @@ def ele_cuttightid(events, campaign):
 
 def ele_mvatightid(events, campaign):
     elemask = (
-        (abs(events.Electron.eta) < 1.4442)
-        | ((abs(events.Electron.eta) < 2.5) & (abs(events.Electron.eta) > 1.566))
-    ) & (events.Electron.mvaIso_WP80 > 0.5)
+        ((abs(events.Electron.eta) < 1.4442)
+        | ((abs(events.Electron.eta) < 2.5) & (abs(events.Electron.eta) > 1.566))) & (events.Electron.mvaFall17V2Iso_WP80 > 0.5)) 
+        # & (events.Electron.mvaIso_WP80 > 0.5) #NOTE no mvaIso_WP80 in DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia
 
     return elemask
 
@@ -438,7 +438,7 @@ met_filters = {
             "eeBadScFilter",
         ],
     },
-    "2017_UL": {
+    "Rereco17_94X": {
         "data": [
             "goodVertices",
             "globalSuperTightHalo2016Filter",
@@ -446,9 +446,36 @@ met_filters = {
             "HBHENoiseIsoFilter",
             "EcalDeadCellTriggerPrimitiveFilter",
             "BadPFMuonFilter",
-            "BadPFMuonDzFilter",
-            "hfNoisyHitsFilter",
-            "eeBadScFilter",
+            # "BadPFMuonDzFilter",
+            # "hfNoisyHitsFilter",
+            # "eeBadScFilter",
+            # "ecalBadCalibFilter",
+        ],
+        "mc": [
+            "goodVertices",
+            "globalSuperTightHalo2016Filter",
+            "HBHENoiseFilter",
+            "HBHENoiseIsoFilter",
+            "EcalDeadCellTriggerPrimitiveFilter",
+            "BadPFMuonFilter",
+            # "BadPFMuonDzFilter",
+            # "hfNoisyHitsFilter",
+            # "eeBadScFilter",
+            # "ecalBadCalibFilter",
+        ],
+    },
+    "2017_UL": {
+        # Following #https://twiki.cern.ch/twiki/bin/view/CMS/MissingETOptionalFiltersRun2 which was used in BTV20-001 as well!
+        "data": [
+            "goodVertices",
+            "globalSuperTightHalo2016Filter",
+            "HBHENoiseFilter",
+            "HBHENoiseIsoFilter",
+            "EcalDeadCellTriggerPrimitiveFilter",
+            "BadPFMuonFilter",
+            # "BadPFMuonDzFilter",
+            # "hfNoisyHitsFilter",
+            "eeBadScFilter", 
             "ecalBadCalibFilter",
         ],
         "mc": [
@@ -458,8 +485,8 @@ met_filters = {
             "HBHENoiseIsoFilter",
             "EcalDeadCellTriggerPrimitiveFilter",
             "BadPFMuonFilter",
-            "BadPFMuonDzFilter",
-            "hfNoisyHitsFilter",
+            # "BadPFMuonDzFilter",
+            # "hfNoisyHitsFilter",
             "eeBadScFilter",
             "ecalBadCalibFilter",
         ],

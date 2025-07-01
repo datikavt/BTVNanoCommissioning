@@ -61,9 +61,11 @@ class NanoProcessor(processor.ProcessorABC):
             for collections, name in shifts
         )
 
+
     def process_shift(self, events, shift_name):
         dataset = events.metadata["dataset"]
         isRealData = not hasattr(events, "genWeight")
+        print("Selection Modifier:", self.selMod)
 
         ####################
         #    Selections    #
@@ -88,6 +90,8 @@ class NanoProcessor(processor.ProcessorABC):
             ]
             iso_lep = ak.pad_none(iso_muon, 2)
             req_lep = (ak.count(iso_lep.pt, axis=1) == 2) & (iso_lep[:, 0].pt > 20)
+            #require opposite charge #NOTE added by me
+            req_lep = req_lep & (iso_lep[:, 0].charge * iso_lep[:, 1].charge < 0)
             # veto other flavors
             dilep_ele = events.Electron[
                 (events.Electron.pt > 15) & ele_mvatightid(events, self._campaign)
@@ -100,6 +104,8 @@ class NanoProcessor(processor.ProcessorABC):
             ]
             iso_lep = ak.pad_none(iso_ele, 2)
             req_lep = (ak.count(iso_lep.pt, axis=1) == 2) & (iso_lep[:, 0].pt > 27)
+            #require opposite charge #NOTE added by me
+            req_lep = req_lep & (iso_lep[:, 0].charge * iso_lep[:, 1].charge < 0)
             # veto other flavors
             dilep_mu = events.Muon[
                 (events.Muon.pt > 12) & mu_idiso(events, self._campaign)

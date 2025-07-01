@@ -19,8 +19,9 @@ correction_config = {
         },
     },
     "2017_UL": {
-        "lumiMask": "Cert_294927-306462_13TeV_UL2017_Collisions17_MuonJSON.txt",
-        "PU": None,
+        # "lumiMask": "Cert_294927-306462_13TeV_UL2017_Collisions17_MuonJSON.txt",
+        "lumiMask": "Cert_294927-306462_13TeV_UL2017_Collisions17_GoldenJSON.txt",
+        "PU": "puWeights.json.gz", #NOTE added by me from https://gitlab.cern.ch/cms-nanoAOD/jsonpog-integration/-/tree/master/POG/LUM/2017_UL?ref_type=heads
         "JME": "jec_compiled.pkl.gz",
         "BTV": {"deepCSV": "shape", "deepJet": "shape"},
         "LSF": {

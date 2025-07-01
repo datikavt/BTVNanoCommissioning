@@ -164,7 +164,7 @@ class NanoProcessor(processor.ProcessorABC):
                 "DeepJetC",
             ]  # exclude b-tag SFs for btag inputs
         if isRealData:
-            genflavor = ak.zeros_like(pruned_ev.SelJet.pt, axis=-1)
+            genflavor = ak.zeros_like(pruned_ev.SelJet.pt)
         else:
             genflavor = ak.values_astype(
                 pruned_ev.SelJet.hadronFlavour

@@ -1,6 +1,8 @@
 from BTVNanoCommissioning.helpers.func import update
 from BTVNanoCommissioning.utils.correction import add_jec_variables
 import numpy as np
+import re
+import awkward as ak
 
 
 def missing_branch(events):
@@ -33,24 +35,85 @@ def missing_branch(events):
 
     """
     # Function implementation here
-    events["fixedGridRhoFastjetAll"] = (
-        events.fixedGridRhoFastjetAll
-        if hasattr(events, "fixedGridRhoFastjetAll")
-        else events.Rho.fixedGridRhoFastjetAll
-    )
+    # Try NanoAOD-style first
+    if hasattr(events, "fixedGridRhoFastjetAll"):
+        events["fixedGridRhoFastjetAll"] = events.fixedGridRhoFastjetAll
+    # Then try if it's in a sub-collection like Rho (NanoAODv10+ sometimes does this)    
+    elif hasattr(events, "Rho") and hasattr(events.Rho, "fixedGridRhoFastjetAll"):
+        events["fixedGridRhoFastjetAll"] = events.Rho.fixedGridRhoFastjetAll
+    # Then try RECO-style naming with full key name    
+    elif "double" in events.fields:
+        print("Checking 'double' collection for fixedGridRhoFastjetAll...")
+
+        # Check inside the 'double' collection
+        for key in events["double"].fields:
+            if key.endswith("double_fixedGridRhoFastjetAll__RECO.obj"):
+                print("Matched RECO rho key:", key)
+                events["fixedGridRhoFastjetAll"] = events["double"][key]
+                break
+        else:
+            raise RuntimeError("Could not find fixedGridRhoFastjetAll in 'double' collection.")
+
+    else:
+        raise RuntimeError("Could not find fixedGridRhoFastjetAll in any known form.")
+
+
+
+    # Try assigning 'Jet' if not present but alternatives exist
+    if not hasattr(events, "Jet"):
+        possible_jet_keys = ["patJets", "recoCaloJets", "recoPFJets", "slimmedJets"]  # Add others as needed
+        for key in possible_jet_keys:
+            if hasattr(events, key):
+                events.Jet = events[key]
+                break
+        else:
+            print("Warning: No Jet collection found, skipping Jet-related updates.")
+            return events  # Early return; Jet logic can't proceed    
+            
     ## calculate missing nodes
 
     if not hasattr(events.Jet, "btagDeepFlavB"):
         jets = events.Jet
+        if not hasattr(events.Jet, "btagDeepFlavB_b"):
+            # If btagDeepFlavB_b is not present, we need to extract it from userFloat labels
+            # These are the label strings we want to find in the userFloat labels
+            target_labels = {
+                "btagDeepFlavB_b": "btagDeepFlavB:b",
+                "btagDeepFlavB_bb": "btagDeepFlavB:bb",
+                "btagDeepFlavB_lepb": "btagDeepFlavB:lepb"
+            }
+
+            labels = jets["slimmedJets__PAT./patJets_slimmedJets__PAT.obj/patJets_slimmedJets__PAT.obj.userFloatLabels_"]
+            values = jets["slimmedJets__PAT./patJets_slimmedJets__PAT.obj/patJets_slimmedJets__PAT.obj.userFloats_"]
+
+            for outname, label in target_labels.items():
+                found_mask = ak.any(labels == label, axis=1)
+
+                # Use ak.where to build index only where label exists
+                indices = ak.where(labels == label, ak.local_index(labels, axis=1), -1)
+                index_per_jet = ak.max(indices, axis=1)
+
+                # Extract values only where found
+                extracted = ak.fill_none(
+                    ak.where(
+                        found_mask,
+                        values[ak.local_index(values, axis=1), index_per_jet],
+                        -1.0  # or np.nan
+                    ),
+                    -1.0
+                )
+
+                jets[outname] = extracted
+
+        # Combine components
         jets["btagDeepFlavB"] = (
-            events.Jet.btagDeepFlavB_b
-            + events.Jet.btagDeepFlavB_bb
-            + events.Jet.btagDeepFlavB_lepb
+            jets["btagDeepFlavB_b"]
+            + jets["btagDeepFlavB_bb"]
+            + jets["btagDeepFlavB_lepb"]
         )
-        events.Jet = update(
-            events.Jet,
-            {"btagDeepFlavB": jets.btagDeepFlavB},
-        )
+
+        # Update back to events
+        events.Jet = update(jets, {"btagDeepFlavB": jets.btagDeepFlavB})
     if (
         hasattr(events.Jet, "btagDeepFlavCvL")
         and hasattr(events.Jet, "btagDeepFlavUDS")

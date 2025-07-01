@@ -56,19 +56,21 @@ class NanoProcessor(processor.ProcessorABC):
     def process(self, events):
         events = missing_branch(events)
         shifts = common_shifts(self, events)
-
+        #NOTE: edited by me! added the []!
         return processor.accumulate(
-            self.process_shift(update(events, collections), name)
-            for collections, name in shifts
+            [self.process_shift(update(events, collections), name)
+             for collections, name in shifts]
         )
 
     def process_shift(self, events, shift_name):
         dataset = events.metadata["dataset"]
         isRealData = not hasattr(events, "genWeight")
+        print("Selection Modifier:", self.selMod)
 
         isMu = False
         isEle = False
         ### selections from Spandan
+        #NOTE: these seem like QCD killer cuts  from Table 6!
         if "WcM" in self.selMod or "semittM" in self.selMod:
             triggers = ["IsoMu27", "IsoMu24"]
             isMu = True
@@ -78,7 +80,7 @@ class NanoProcessor(processor.ProcessorABC):
             if "cutbased_WcM" == self.selMod:
                 muNeEmSum = 1.0
             muonpTratioCut = 0.4
-            isolepdz, isolepdxy, isolepsip3d = 0.01, 0.002, 2
+            isolepdz, isolepdxy, isolepsip3d = 0.01, 0.002, 2 
         elif "WcE" in self.selMod or "semittE" in self.selMod:
             triggers = ["Ele32_WPTight_Gsf_L1DoubleEG"]
             isEle = True
@@ -219,24 +221,28 @@ class NanoProcessor(processor.ProcessorABC):
         # Other cuts
         req_pTratio = (soft_muon[:, 0].pt / mu_jet[:, 0].pt) < muonpTratioCut
         idx = np.where(iso_lep.jetIdx == -1, 0, iso_lep.jetIdx)
-        ## Additional cut to reject QCD events,used in BTV-20-001
-        # req_QCDveto = (
-        #     (iso_lep.pfRelIso04_all < 0.05)
-        # & (abs(iso_lep.dz) < isolepdz)
-        # & (abs(iso_lep.dxy) < isolepdxy)
-        # & (iso_lep.sip3d < isolepsip3d)
-        # & (
-        #     iso_lep.pt
-        #     / ak.firsts(
-        #         events.Jet[
-        #             (events.Jet.muonIdx1 == iso_lepindx)
-        #             | ((events.Jet.muonIdx2 == iso_lepindx))
-        #         ].pt
-        #     )
-        #     > 0.75
-        # )
-        # )
-
+        ## Additional cut to reject QCD events,used in BTV-20-001, NOTE uncommented
+        #NOTE adding to do the QCD veto only when Sel mod is WcM
+        if "WcM" in self.selMod:
+            req_QCDveto = (
+            (iso_lep.pfRelIso04_all < 0.05)
+            & (abs(iso_lep.dz) < isolepdz)
+            & (abs(iso_lep.dxy) < isolepdxy)
+            & (iso_lep.sip3d < isolepsip3d)
+            & (
+                iso_lep.pt
+                / ak.firsts(
+                    events.Jet[
+                        (events.Jet.muonIdx1 == iso_lepindx)
+                        | ((events.Jet.muonIdx2 == iso_lepindx))
+                    ].pt
+                )
+                > 0.75
+            )
+            )
+        else:
+            # No requirement for QCD veto  if not WcM
+            req_QCDveto = ak.ones_like(iso_lep.pt, dtype=bool)
         dilep_mu = events.Muon[(events.Muon.pt > 12) & mu_idiso(events, self._campaign)]
         dilep_ele = events.Electron[
             (events.Electron.pt > 15) & ele_mvatightid(events, self._campaign)
@@ -303,6 +309,7 @@ class NanoProcessor(processor.ProcessorABC):
             & req_lep
             & req_jets
             & req_softmu
+            & req_QCDveto #NOTE added by me used in BTV-20-001
             & req_dilepmass
             & req_mujet
             & req_mtw
@@ -397,17 +404,23 @@ class NanoProcessor(processor.ProcessorABC):
         pruned_ev["MuonJet_muneuEF"] = smuon_jet.muEF + smuon_jet.neEmEF
         if "hadronFlavour" in pruned_ev.SelJet.fields:
             isRealData = False
+            #NOTE modified the line below!!
             genflavor = ak.values_astype(
-                pruned_ev.SelJet.hadronFlavour
-                + 1 * (pruned_ev.SelJet.partonFlavour == 0)
-                & (pruned_ev.SelJet.hadronFlavour == 0),
+                # pruned_ev.SelJet.hadronFlavour + ((pruned_ev.SelJet.partonFlavour == 0) & (pruned_ev.SelJet.hadronFlavour == 0)),
+                # int,
+                pruned_ev.SelJet.hadronFlavour,
                 int,
             )
             if "MuonJet" in pruned_ev.fields:
                 smflav = ak.values_astype(
-                    1 * (pruned_ev.MuonJet.partonFlavour == 0)
-                    & (pruned_ev.MuonJet.hadronFlavour == 0)
-                    + pruned_ev.MuonJet.hadronFlavour,
+                    # 1 * (pruned_ev.MuonJet.partonFlavour == 0)
+                    # & (pruned_ev.MuonJet.hadronFlavour == 0)
+                    # + pruned_ev.MuonJet.hadronFlavour,
+                    # int,
+                    #NOTE modified the line below!!
+                    # pruned_ev.MuonJet.hadronFlavour + ((pruned_ev.MuonJet.partonFlavour == 0) & (pruned_ev.MuonJet.hadronFlavour == 0)),
+                    # int,
+                    pruned_ev.MuonJet.hadronFlavour,
                     int,
                 )
         else:
@@ -452,9 +465,10 @@ class NanoProcessor(processor.ProcessorABC):
             for histname, h in output.items():
                 if (
                     "Deep" in histname
-                    and "btag" not in histname
+                    and "btag" not in histname #NOTE # removed by me to have btagDeepFlav* enter here
                     and histname in events.Jet.fields
                 ):
+                    print(f"GENFLAVOR!!! Filling {histname} for syst {syst} with weight {weight}")
                     h.fill(
                         syst,
                         flatten(genflavor),
@@ -521,6 +535,10 @@ class NanoProcessor(processor.ProcessorABC):
                         weight=weight,
                     )
                 elif "btag" in histname and "Trans" not in histname:
+                    print("Histname in btag and not Trans:", histname)
+                    print("Shape of genflavor:", genflavor)
+                    print("Shape of smflav:", smflav)
+                    print("dataset name is ", dataset)
                     for i in range(2):
                         if (
                             str(i) not in histname
@@ -566,7 +584,7 @@ class NanoProcessor(processor.ProcessorABC):
             output["njet"].fill(syst, osss, njet, weight=weight)
             output["nmujet"].fill(syst, osss, nmujet, weight=weight)
             output["nsoftmu"].fill(syst, osss, nsoftmu, weight=weight)
-            output["hl_ptratio"].fill(
+            output["hl_ptratio"].fill( 
                 syst,
                 genflavor[:, 0],
                 osss=osss,

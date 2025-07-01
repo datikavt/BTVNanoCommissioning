@@ -2,18 +2,19 @@
 DATE=$(date +%y_%m_%d)
 echo "running on $DATE"
 # Check if the arguments file exists
-if [ ! -f "arguments.txt" ]; then
+if [ ! -f "/user/dkavtara/btv/btvnanocommissioning/scripts/submit/arguments.txt" ]; then
     echo "Error: arguments.txt not found."
     exit 1
 fi
 
 # Read arguments from the file
-args=$(<arguments.txt)
+args=$(</user/dkavtara/btv/btvnanocommissioning/scripts/submit/arguments.txt)
 # Split the arguments into an array
 IFS=$'\n' read -d '' -r -a arg_array <<< "$args"
 
 # Check if enough arguments are provided
 if [ "${#arg_array[@]}" -lt 4 ]; then
+    echo "Number of arguments read: ${#arg_array[@]}"
     echo "Error: Insufficient arguments provided in arguments.txt."
     exit 1
 fi

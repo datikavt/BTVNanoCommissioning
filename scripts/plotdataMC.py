@@ -107,7 +107,7 @@ elif "*" in args.input:
     output = {i: load(i) for i in files}
 else:
     output = {args.input: load(args.input)}
-output = scaleSumW(output, args.lumi)
+output = scaleSumW(output, args.lumi) # WITH this no mc is found in the output
 mergemap = {}
 ## create merge map from sample set/data MC
 if not os.path.isdir(f"plot/{args.phase}_{args.ext}/"):
@@ -115,14 +115,14 @@ if not os.path.isdir(f"plot/{args.phase}_{args.ext}/"):
 if not any(".coffea" in o for o in output.keys()):
     if "sample" in args.split:
         mergemap = sample_mergemap
-    mergemap["data"] = [m for m in output.keys() if "Run" in m]
-    mergemap["mc"] = [m for m in output.keys() if "Run" not in m]
+    mergemap["data"] = [m for m in output.keys() if "Run20" in m]
+    mergemap["mc"] = [m for m in output.keys() if "Run20" not in m]
 else:
     datalist = []
     mclist = []
     for f in output.keys():
-        datalist.extend([m for m in output[f].keys() if "Run" in m])
-        mclist.extend([m for m in output[f].keys() if "Run" not in m])
+        datalist.extend([m for m in output[f].keys() if "Run20" in m])
+        mclist.extend([m for m in output[f].keys() if "Run" not in m]) 
     if "sample" in args.split:
         mergemap = sample_mergemap
     mergemap["mc"] = mclist
@@ -243,7 +243,8 @@ for index, discr in enumerate(var_set):
             for i in range(collated["mc"][discr].axes[0].size)
         ]
         if "noSF" in systlist:
-            noSF_axis["syst"] = "nominal"
+            # noSF_axis["syst"] = "nominal"
+            noSF_axis["syst"] = "noSF" #NOTE: #WARNING testing with w+c
 
     ## rebin config, add xerr
     do_xerr = False
@@ -424,6 +425,14 @@ for index, discr in enumerate(var_set):
                     color_config["color"].append(color_map[sample])
                     color_config["alpha"].append(1.0 - 0.2 * i)
         noSF_axis["flav"] = sum
+
+        print("splitflav_stack contents:", splitflav_stack)
+        print("Number of histograms in stack:", len(splitflav_stack))
+        print("Labels:", labels)
+        print("Color config:", color_config)
+        for i, hist in enumerate(splitflav_stack):
+            print(f"Hist {i} values:", hist.values())
+            print(f"Hist {i} type:", type(hist))
         hep.histplot(
             splitflav_stack,
             stack=True,

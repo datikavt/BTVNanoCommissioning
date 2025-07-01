@@ -1,6 +1,6 @@
 from coffea.util import load
 import uproot, sys, os, argparse, hist
-from BTVNanoCommissioning.helpers.xs_scaler import collate, scaleSumW
+from BTVNanoCommissioning.helpers.xs_scaler import collate, scaleSumW, scale_xs, getSumW
 import numpy as np
 
 parser = argparse.ArgumentParser(description="Make templates from coffea files")
@@ -47,6 +47,9 @@ parser.add_argument(
 
 
 def create_template(inputs, variable, mergemap, axis, lumi, output):
+    #NOTE: found that for old frameworks this was used scaleSumW with scale_xs
+    # :https://github.com/cms-btv-pog/BTVNanoCommissioning/blob/9ec14fab297d1b77e491cd001b34fd68ca359325/notebooks/make_some_plots.ipynb#L58
+    # events = inputs['/user/dkavtara/btv/btvnanocommissioning/hists_ctag_DY_sf_ctag_DY_mu_myfile/hists_ctag_DY_sf_ctag_DY_mu_myfile.coffea']['DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8']["sumw"]
     inputs = scaleSumW(inputs, lumi)
     collated = collate(inputs, mergemap)
     mergemap_all = {"all": [s for s in inputs]}

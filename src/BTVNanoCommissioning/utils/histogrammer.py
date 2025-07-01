@@ -248,6 +248,7 @@ def histogrammer(events, workflow, year="2022", campaign="Summer22"):
             ),
             Hist.storage.Weight(),
         )
+
         # delta R between soft muon and mu-jet
         _hist_dict["dr_lmujetsmu"] = Hist.Hist(
             syst_axis, flav_axis, dr_s_axis, Hist.storage.Weight()
@@ -475,17 +476,17 @@ def histogrammer(events, workflow, year="2022", campaign="Summer22"):
 
         for obj in obj_list:
             # mujet pt passing tagger WPs
-            if "mujet" in obj:
-                for tagger in btag_wp_dict[year + "_" + campaign].keys():
-                    for wp in btag_wp_dict[year + "_" + campaign][tagger]["c"].keys():
-                        if not "No" in wp:
-                            _hist_dict[f"{obj}_pt_{tagger}{wp}"] = Hist.Hist(
-                                syst_axis,
-                                flav_axis,
-                                osss_axis,
-                                jpt_axis,
-                                Hist.storage.Weight(),
-                            )
+            # if "mujet" in obj:
+            #     for tagger in btag_wp_dict[year + "_" + campaign].keys():
+            #         for wp in btag_wp_dict[year + "_" + campaign][tagger]["c"].keys():
+            #             if not "No" in wp:
+            #                 _hist_dict[f"{obj}_pt_{tagger}{wp}"] = Hist.Hist(
+            #                     syst_axis,
+            #                     flav_axis,
+            #                     osss_axis,
+            #                     jpt_axis,
+            #                     Hist.storage.Weight(),
+            #                 )
 
             if "jet" in obj or "soft_l" in obj:
                 if obj == "soft_l":
@@ -587,6 +588,12 @@ def histogrammer(events, workflow, year="2022", campaign="Summer22"):
                     Hist.axis.Regular(50, 0.0, 1, name="discr", label=disc),
                     Hist.storage.Weight(),
                 )
+                _hist_dict[f"mu_{disc}_{i}"] = Hist.Hist(
+                    syst_axis,
+                    flav_axis,
+                    Hist.axis.Regular(50, 0, 300, name="discr", label="Muon Jet " + disc),
+                    Hist.storage.Weight(),
+                    )
             elif "Bprob" in disc:
                 _hist_dict[f"c_{disc}"] = Hist.Hist(
                     syst_axis,
@@ -594,6 +601,13 @@ def histogrammer(events, workflow, year="2022", campaign="Summer22"):
                     Hist.axis.Regular(50, 0, 10, name="discr", label=disc),
                     Hist.storage.Weight(),
                 )
+                _hist_dict[f"mu_{disc}_{i}"] = Hist.Hist(
+                    syst_axis,
+                    flav_axis,
+                    Hist.axis.Regular(50, 0, 300, name="discr", label="Muon Jet " + disc),
+                    Hist.storage.Weight(),
+                )
+
             elif "PNetRegPtRawRes" == disc:
                 _hist_dict[f"c_{disc}"] = Hist.Hist(
                     syst_axis,
@@ -616,6 +630,12 @@ def histogrammer(events, workflow, year="2022", campaign="Summer22"):
                         flav_axis,
                         osss_axis,
                         Hist.axis.Regular(50, 0.0, 1, name="discr", label=disc),
+                        Hist.storage.Weight(),
+                    )
+                    _hist_dict[f"mu_{disc}_{i}"] = Hist.Hist(
+                        syst_axis,
+                        flav_axis,
+                        Hist.axis.Regular(50, 0, 300, name="discr", label="Muon Jet " + disc),
                         Hist.storage.Weight(),
                     )
                 elif "Bprob" in disc:
@@ -651,11 +671,23 @@ def histogrammer(events, workflow, year="2022", campaign="Summer22"):
                         Hist.axis.Regular(50, 0.0, 1, name="discr", label=disc),
                         Hist.storage.Weight(),
                     )
+                    _hist_dict[f"mu_{disc}_{i}"] = Hist.Hist(
+                        syst_axis,
+                        flav_axis,
+                        Hist.axis.Regular(50, 0, 300, name="discr", label="Muon Jet " + disc),
+                        Hist.storage.Weight(),
+                    )
                 elif "Bprob" in disc:
                     _hist_dict[f"{disc}_{i}"] = Hist.Hist(
                         syst_axis,
                         flav_axis,
                         Hist.axis.Regular(50, 0, 10, name="discr", label=disc),
+                        Hist.storage.Weight(),
+                    )
+                    _hist_dict[f"mu_{disc}_{i}"] = Hist.Hist(
+                        syst_axis,
+                        flav_axis,
+                        Hist.axis.Regular(50, 0, 300, name="discr", label="Muon Jet " + disc),
                         Hist.storage.Weight(),
                     )
                 elif "PNetRegPtRawRes" == disc:
@@ -677,6 +709,7 @@ def histogrammer(events, workflow, year="2022", campaign="Summer22"):
 
 # Filled common histogram
 def histo_writter(pruned_ev, output, weights, systematics, isSyst, SF_map):
+
     """
     Write histograms to the output dictionary based on pruned events and other parameters.
 
@@ -708,16 +741,22 @@ def histo_writter(pruned_ev, output, weights, systematics, isSyst, SF_map):
     nj = 1 if type(pruned_ev.SelJet.pt[0]) == float else len(pruned_ev.SelJet.pt[0])
     if "hadronFlavour" in pruned_ev.SelJet.fields:
         isRealData = False
+        #NOTE modified the line below!!
+        # genflavor = ak.values_astype(pruned_ev.SelJet.hadronFlavour, int)
         genflavor = ak.values_astype(
-            pruned_ev.SelJet.hadronFlavour + 1 * (pruned_ev.SelJet.partonFlavour == 0)
-            & (pruned_ev.SelJet.hadronFlavour == 0),
+            pruned_ev.SelJet.hadronFlavour + ((pruned_ev.SelJet.partonFlavour == 0) & (pruned_ev.SelJet.hadronFlavour == 0)),
             int,
         )
         if "MuonJet" in pruned_ev.fields:
+            # smflav = ak.values_astype(
+            #     (1 * (pruned_ev.MuonJet.partonFlavour == 0)
+            #     & (pruned_ev.MuonJet.hadronFlavour == 0))
+            #     + pruned_ev.MuonJet.hadronFlavour,
+            #     int,
+            # )
             smflav = ak.values_astype(
-                1 * (pruned_ev.MuonJet.partonFlavour == 0)
-                & (pruned_ev.MuonJet.hadronFlavour == 0)
-                + pruned_ev.MuonJet.hadronFlavour,
+                pruned_ev.MuonJet.hadronFlavour
+                + ((pruned_ev.MuonJet.partonFlavour == 0) & (pruned_ev.MuonJet.hadronFlavour == 0)),
                 int,
             )
     else:
@@ -725,6 +764,9 @@ def histo_writter(pruned_ev, output, weights, systematics, isSyst, SF_map):
         genflavor = ak.zeros_like(pruned_ev.SelJet.pt, dtype=int)
         if "MuonJet" in pruned_ev.fields:
             smflav = ak.zeros_like(pruned_ev.MuonJet.pt, dtype=int)
+            print("pruned_ev.MuonJet.fields are ", pruned_ev.MuonJet.fields)
+
+    print("output items are ", output.items())
     # Loop over the systematic variations
     for syst in systematics:
         if isSyst == False and syst != "nominal":
@@ -735,12 +777,13 @@ def histo_writter(pruned_ev, output, weights, systematics, isSyst, SF_map):
             if syst == "nominal" or syst not in list(weights.variations)
             else weights.weight(modifier=syst)
         )
+
         # Loop over the histograms
         for histname, h in output.items():
             # tagger score histograms
             if (
                 "Deep" in histname
-                and "btag" not in histname
+                and "btag" not in histname #NOTE with this genflavor is not written in my btagDeepFlavCvB for example
                 and histname in pruned_ev.SelJet.fields
             ):
 
@@ -902,14 +945,34 @@ def histo_writter(pruned_ev, output, weights, systematics, isSyst, SF_map):
                     flatten(pruned_ev.MuonJet[histname.replace("lmujet_", "")]),
                     weight=weight,
                 )
-            # filled discriminants
-            elif "btag" in histname or "PNet" in histname:
+            # filled discriminants # NOTE edited this line
+            elif ("btag" in histname or "PNet" in histname) and "mu_" not in histname:
                 # Events with muon jet
                 if "MuonJet" in pruned_ev.fields:
+                    print("MuonJet in pruned_ev.fields")
                     flavs, seljets = smflav, pruned_ev.MuonJet
                     nj = 1
                 else:
                     flavs, seljets = genflavor, pruned_ev.SelJet
+
+
+                for i in range(nj):
+                    if not histname.endswith(str(i)):
+                        continue
+                    if nj > 1:
+                        flav, seljet = flavs[:, i], seljets[:, i]
+                    else:
+                        flav, seljet = flavs, seljets
+                    h.fill(
+                        syst=syst,
+                        flav=flav,
+                        discr=seljet[histname.replace(f"_{i}", "")],
+                        weight=weights.partial_weight(exclude=exclude_btv),
+                    )
+            elif "btag" in histname and "mu_" in histname:
+                # Events with muon jet
+                flavs, seljets = smflav, pruned_ev.MuonJet
+                nj = 1
 
                 for i in range(nj):
                     if not histname.endswith(str(i)):
@@ -994,6 +1057,7 @@ def histo_writter(pruned_ev, output, weights, systematics, isSyst, SF_map):
                 dr=pruned_ev.MuonJet.delta_r(pruned_ev.SoftMuon),
                 weight=weight,
             )
+
             if "SelMuon" in pruned_ev.fields and "hl" not in pruned_ev.fields:
                 output["dr_lmujethmu"].fill(
                     syst,

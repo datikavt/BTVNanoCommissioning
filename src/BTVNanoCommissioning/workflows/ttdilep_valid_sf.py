@@ -176,6 +176,9 @@ class NanoProcessor(processor.ProcessorABC):
         if "PFCands" in events.fields:
             pruned_ev.PFCands = PFCand_link(events, event_level, jetindx)
 
+
+        print("pruned_ev[SelJet] fields", pruned_ev["SelJet"].fields)
+
         ####################
         #     Output       #
         ####################
